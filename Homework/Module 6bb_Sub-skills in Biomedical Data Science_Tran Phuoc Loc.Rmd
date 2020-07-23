@@ -1,0 +1,71 @@
+---
+title: "Sub-skills in Biomedical Data Science"
+author: Tran Phuoc Loc (Team 2)
+date: '`r format(Sys.Date(), "%Y-%B-%d")`'
+output:
+  html_document:
+   toc: yes
+   toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message = FALSE)
+```
+
+## Install packages
+```{r }
+#install.packages("rio")
+#install.packages("car")
+#install.packages("tidyverse")
+#install.packages("caret")
+```
+
+# Data
+
+```{r hw1}
+library(rio)
+library(car)
+link <- "E:/Biomedical study/Intro_R_Project/Intro_R/wine/"
+
+dat  <- import(paste(link,"winequality-red.csv",sep="")) 
+dat$qua.type = car::recode(dat$quality,"3:5=1; 6=2; 7:9=3")
+dat$qua.type = as.factor(dat$qua.type)
+head(dat)
+str(dat)
+#Let's check our explained variable distribution of quality
+round(prop.table(table(dat$qua.type)), 2)
+
+library(caret)
+train.set = createDataPartition(dat$qua.type, p = 0.8, list = FALSE)
+train = dat[train.set,]
+test  = dat[-train.set,]
+#write.csv(train,file = paste(link,"wine-quality-train.csv",sep=""))
+#write.csv(test,file = paste(link,"wine-quality-test.csv",sep=""))
+```
+
+# Fit model by Random forest classification 
+```{r hw2}
+wine.rf = train(qua.type ~ ., 
+                data = train, method = "rf",
+                trControl = trainControl(method="cv"))
+
+wine.rf
+
+# Summary(wine.bagg$finalModel)
+plot(varImp(wine.rf))
+
+# Let's use our model to make our prediction for test set
+
+wine.pred = predict(wine.rf, newdata = test)
+
+test$predited = wine.pred
+confusionMatrix(test$qua.type,wine.pred)
+
+# Save the predicted results
+
+#write.csv(test,file = paste(link,"predicted.csv",sep=""))
+
+```
+
+
+
